@@ -14,6 +14,7 @@ def collect_mention(brand: str, limit: int = 10) -> list[dict]:
     params = {
         "q": brand,
         "from": from_date,
+        "language": "en",
         "sortBy": "publishedAt",
         "pageSize": limit,
         "apiKey": NEWS_API_KEY
