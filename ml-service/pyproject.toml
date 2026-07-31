@@ -12,4 +12,5 @@ dependencies = [
     "supabase>=2.31.0",
     "torch>=2.13.0",
     "transformers>=5.14.1",
+    "uvicorn>=0.52.0",
 ]

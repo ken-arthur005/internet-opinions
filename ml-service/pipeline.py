@@ -21,7 +21,7 @@ def run(brand: str):
 
 if __name__ == "__main__":
     try:
-        run("Nike")
+        run("FIFA")
     except Exception as e:
         print(f"Error: {e}")
         import traceback
