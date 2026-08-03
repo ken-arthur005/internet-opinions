@@ -14,6 +14,6 @@ def save_mentions(mentions: list[dict]):
     if not mentions:
         print("Nothing to save — list is empty")
         return
-
+    
     response = supabase.table("mentions").insert(mentions).execute()
     return response
