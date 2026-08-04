@@ -22,7 +22,7 @@ public class MentionService {
     public List<Mention> getMentions(String brand) {
         return mentionRepository.findByBrandIgnoreCase(brand);
     }
-
+    
     public Map<String, Object> getSentimentSummary(String brand) {
         List<Mention> mentions = mentionRepository.findByBrandIgnoreCase(brand);
 
