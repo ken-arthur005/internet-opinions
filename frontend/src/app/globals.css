@@ -1,26 +1,359 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ---------------------------------------------------------------------------
+   Themes — every colour in the app resolves through these blocks.
+   Applied via data-theme on <html>. All four are dark by design.
+
+   NOTE: these are plain custom properties, NOT @theme entries. That matters:
+   --text-primary must stay out of @theme because Tailwind v4 owns the
+   --text-* namespace for font sizes, so a colour there would make
+   `text-primary` compile to `font-size: #f0f0ff`. The bridge into Tailwind
+   utilities happens in the @theme inline block further down, which exposes
+   these as --color-fg / --color-card / etc.
+
+   BACKGROUND CONTRACT — each theme sets three variables:
+
+     --theme-bg-image  the image behind the hero and loading screens
+     --theme-bg-tint   0..1, how strongly the accent recolours that image
+     --theme-bg-dim    0..1, how much flat --bg-base darkens it
+
+   The tint layer uses mix-blend-mode: color, which takes hue and saturation
+   from --accent while keeping the image's luminosity — so one asset serves
+   several themes without the line-work turning to mud. Ember tints bg2.jpg
+   that way. Void, Aurora and Matrix sit at 0 because their artwork is already
+   their colour: bg2.jpg is periwinkle, bg4aurora.jpg violet, bg3.jpg emerald.
+
+   Dim is the knob tint cannot be. Preserving luminosity is the whole point of
+   mix-blend-mode: color, so no tint value makes a bright image safe to put
+   text on — only Aurora needs it, and only because bg4aurora.jpg is a pale
+   sky. To give a theme its own artwork, point --theme-bg-image at the new
+   file, set --theme-bg-tint to 0, and add dim only if the art is light.
+--------------------------------------------------------------------------- */
+
+/* Void doubles as the fallback palette: if data-theme is ever missing or holds
+   an unknown value, :root still resolves every variable rather than leaving
+   the page unstyled. */
+:root,
+[data-theme="void"] {
+  --bg-base: #080810;
+  --bg-surface: #0f0f1a;
+  --bg-card: #13131f;
+  --bg-card-hover: #1a1a2a;
+  --border: #1e1e30;
+  --border-accent: #2a2a42;
+  --accent: #6c6fff;
+  --accent-dim: #6c6fff22;
+  --accent-glow: #6c6fff44;
+  --text-primary: #f0f0ff;
+  --text-secondary: #8888aa;
+  --text-muted: #4a4a66;
+  --positive: #22d3a0;
+  --negative: #f25f6a;
+  --neutral: #8888aa;
+  --overlay: rgba(8, 8, 16, 0.78);
+  --theme-bg-image: url("/bg2.jpg");
+  --theme-bg-tint: 0;
 }
+
+[data-theme="aurora"] {
+  --bg-base: #06060f;
+  --bg-surface: #0d0b1a;
+  --bg-card: #110f20;
+  --bg-card-hover: #181530;
+  --border: #1c1830;
+  --border-accent: #2e2850;
+  --accent: #a855f7;
+  --accent-dim: #a855f722;
+  --accent-glow: #a855f744;
+  --text-primary: #f5f0ff;
+  --text-secondary: #9980cc;
+  --text-muted: #4a4066;
+  --positive: #34d399;
+  --negative: #f87171;
+  --neutral: #9980cc;
+  --overlay: rgba(6, 6, 15, 0.8);
+  --theme-bg-image: url("/bg4aurora.jpg");
+  --theme-bg-tint: 0;
+  /* The only theme that needs this: bg4aurora.jpg is a pale sky with a
+     near-white sun sitting right where the wordmark lands. */
+  --theme-bg-dim: 0.45;
+}
+
+[data-theme="ember"] {
+  --bg-base: #0c0804;
+  --bg-surface: #140f06;
+  --bg-card: #1a1208;
+  --bg-card-hover: #221808;
+  --border: #2a1e0a;
+  --border-accent: #3d2c10;
+  --accent: #f59e0b;
+  --accent-dim: #f59e0b22;
+  --accent-glow: #f59e0b44;
+  --text-primary: #fff8f0;
+  --text-secondary: #aa8855;
+  --text-muted: #5a4020;
+  --positive: #10b981;
+  --negative: #ef4444;
+  --neutral: #aa8855;
+  --overlay: rgba(12, 8, 4, 0.8);
+  --theme-bg-image: url("/bg2.jpg");
+  --theme-bg-tint: 0.72;
+}
+
+[data-theme="matrix"] {
+  --bg-base: #020805;
+  --bg-surface: #040f08;
+  --bg-card: #061210;
+  --bg-card-hover: #0a1a14;
+  --border: #0d2018;
+  --border-accent: #153020;
+  --accent: #00ff88;
+  --accent-dim: #00ff8820;
+  --accent-glow: #00ff8840;
+  --text-primary: #eeffee;
+  --text-secondary: #44aa66;
+  --text-muted: #1a4428;
+  --positive: #00ff88;
+  --negative: #ff4466;
+  --neutral: #44aa66;
+  --overlay: rgba(2, 8, 5, 0.82);
+  --theme-bg-image: url("/bg3.jpg");
+  --theme-bg-tint: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Tailwind theme bridge.
+
+   `inline` is load-bearing: it makes Tailwind emit the literal var(--accent)
+   reference into utilities instead of baking in the value it resolves to at
+   build time. That is what lets `bg-accent` follow a runtime data-theme swap
+   with no rebuild. Without `inline`, every theme would render as void.
+--------------------------------------------------------------------------- */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Named "ground" rather than "base" because text-base is already Tailwind's
+     font-size utility — a --color-base would make text-base ambiguous. */
+  --color-ground: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-card: var(--bg-card);
+  --color-card-hover: var(--bg-card-hover);
+
+  --color-line: var(--border);
+  --color-line-accent: var(--border-accent);
+
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --color-accent-glow: var(--accent-glow);
+
+  /* Exposed as fg-* rather than text-* to avoid the font-size namespace. */
+  --color-fg: var(--text-primary);
+  --color-fg-secondary: var(--text-secondary);
+  --color-fg-muted: var(--text-muted);
+
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-neutral: var(--neutral);
+
+  --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-albert-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Static design tokens — no runtime swapping needed, so plain @theme. */
+@theme {
+  --text-xs: 11px;
+  --text-xs--line-height: 1.4;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.5;
+  --text-base: 15px;
+  --text-base--line-height: 1.6;
+  --text-lg: 18px;
+  --text-lg--line-height: 1.4;
+  --text-xl: 24px;
+  --text-xl--line-height: 1.3;
+  --text-2xl: 32px;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 48px;
+  --text-3xl--line-height: 1.1;
+  --text-4xl: 64px;
+  --text-4xl--line-height: 1;
+
+  /* DESIGN.md caps card radius at 16px. */
+  --radius-card: 12px;
+  --radius-field: 8px;
+  --radius-pill: 999px;
+
+  --blur-card: 12px;
+}
+
+/* NOTE: DESIGN.md's --space-1..16 ramp (4/8/12/16/20/24/32/40/48/64) is
+   already exactly Tailwind v4's default 4px spacing scale, so there is
+   nothing to declare. Defining --spacing-1 etc. would shadow the multiplier
+   and break arbitrary steps like p-7 and gap-14. */
+
+@layer base {
+  /* Base colour lives on html only. Painting body as well would cover any
+     fixed backdrop layer sitting behind the content. */
+  html {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background-color: var(--accent-glow);
+    color: var(--text-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Theme background — three stacked layers behind the hero and loading
+     screens. See the BACKGROUND CONTRACT note at the top of this file.
+
+     isolation: isolate is load-bearing. Without it the tint layer's
+     mix-blend-mode reaches past this element and recolours the page content
+     sitting above it. */
+  .theme-backdrop {
+    isolation: isolate;
+    background-image: var(--theme-bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .theme-backdrop-tint {
+    background-color: var(--accent);
+    mix-blend-mode: color;
+    opacity: var(--theme-bg-tint, 0);
+  }
+
+  /* Flat luminosity pass for artwork that is too bright to sit text on.
+     Separate from the scrim below because this one is uniform: it lowers the
+     whole image evenly and keeps its internal contrast, where raising the
+     scrim's radial centre instead would blow out the middle of the frame —
+     which is exactly where the wordmark sits. Inert at 0 for dark artwork. */
+  .theme-backdrop-dim {
+    background-color: var(--bg-base);
+    opacity: var(--theme-bg-dim, 0);
+  }
+
+  /* Darkens behind the centred hero content and resolves to the base colour
+     at the bottom edge, so the search form never sits on busy line-work. */
+  .theme-backdrop-scrim {
+    background-image:
+      radial-gradient(
+        ellipse 70% 55% at 50% 45%,
+        color-mix(in srgb, var(--bg-base) 62%, transparent) 0%,
+        color-mix(in srgb, var(--bg-base) 30%, transparent) 100%
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--bg-base) 45%, transparent) 0%,
+        color-mix(in srgb, var(--bg-base) 35%, transparent) 45%,
+        var(--bg-base) 100%
+      );
+  }
+
+  /* Typing caret for the hero wordmark. */
+  .type-caret {
+    display: inline-block;
+    width: 0.06em;
+    height: 0.9em;
+    margin-left: 0.06em;
+    vertical-align: -0.06em;
+    background-color: var(--accent);
+    animation: caret-blink 1s steps(1) infinite;
+  }
+
+  /* Faint film grain so the hero's flat background has some tooth.
+     Inlined as a data URI to keep it a pure-CSS layer with no extra request. */
+  .noise-layer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.028;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* The brand-environment scrim. DESIGN.md specifies a flat var(--overlay)
+     fill; this composes the same token as a vertical gradient instead, so the
+     photograph stays visible in the top band and resolves to solid base
+     colour by the time the card grid starts. A flat fill reads as generic
+     wallpaper — the fade is what sells it as an environment. */
+  .brand-scrim {
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--bg-base) 18%, transparent) 0%,
+      color-mix(in srgb, var(--bg-base) 42%, transparent) 26%,
+      var(--overlay) 52%,
+      var(--bg-base) 76%
+    );
+  }
+
+  /* Scoped to the feed containers rather than applied globally. */
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-accent) transparent;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--border-accent);
+    border-radius: var(--radius-pill);
+  }
+}
+
+@layer utilities {
+  /* DESIGN.md's search-input focus ring. */
+  .ring-focus {
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
